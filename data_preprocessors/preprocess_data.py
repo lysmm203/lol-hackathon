@@ -27,7 +27,8 @@ df_columns = [
     'third_turret_kill',
     'baron_powerplay',
     'first_blood',
-    'result'
+    'result',
+    'file_name'
 ]
 
 leagues = ["LCS", "LEC", "CBLOL", "LCK", "LJL", "LLA", "LPL", "PCS", "VCS"]
@@ -88,8 +89,6 @@ def process_data(input):
     for file_path in files:
         file_name = os.path.join(games_directory, file_path)
 
-
-
         with (open(file_name, 'r') as file):
             game = json.load(file)
             game_length = game['gameEnd']['gameTime'] / 60000
@@ -113,8 +112,10 @@ def process_data(input):
                     if team_id == team['team_id']:
                         if key == str(victor_id):
                             victor_team = team['acronym']
+                            victor_league = league
                         else:
                             loser_team = team['acronym']
+                            loser_league = league
 
             if victor_team is None or loser_team is None:
                 counter +=1
@@ -256,7 +257,6 @@ def process_data(input):
             for turret in victor_turrets_killed:
                 if turret['turretTier'] == 'inner':
                     victor_second_turret = turret['gameTime']
-
                 if turret['turretTier'] == 'base':
                     victor_third_turret = turret['gameTime']
 
@@ -287,7 +287,8 @@ def process_data(input):
             'third_turret_kill': victor_third_turret,
             'baron_powerplay': victor_baron_powerplay,
             'first_blood': first_blood_team == victor_id,
-            'result': 1
+            'result': 1,
+            'file_name': file_name
         })
 
         loser = pd.Series({
@@ -306,13 +307,15 @@ def process_data(input):
             'third_turret_kill': loser_third_turret,
             'baron_powerplay': loser_baron_powerplay,
             'first_blood': first_blood_team == loser_id,
-            'result': 0
+            'result': 0,
+            'file_name': file_name
         })
 
         for region in all_regions:
-            if region == league:
+            if region == victor_league:
                 all_regions[region] = pd.concat([all_regions[region], victor.to_frame().T], \
                                                 ignore_index=True)
+            if region == loser_league:
                 all_regions[region] = pd.concat([all_regions[region], loser.to_frame().T], \
                                                 ignore_index=True)
                 break
